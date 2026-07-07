@@ -1,0 +1,140 @@
+// PostgreSQL schema for Supabase production deployment
+// Usage: cp prisma/schema.postgresql.prisma prisma/schema.prisma
+//        Update DATABASE_URL in .env to Supabase connection string
+//        Then run: npx prisma migrate dev
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum SubscriptionTier {
+  FREE
+  STARTER
+  GROWTH
+  PRO
+  ENTERPRISE
+}
+
+enum CallStatus {
+  MISSED
+  HANDLED
+  ESCALATED
+  VOICEMAIL
+}
+
+enum MessageChannel {
+  SMS
+  WHATSAPP
+}
+
+enum BookingStatus {
+  PENDING
+  CONFIRMED
+  CANCELLED
+  COMPLETED
+}
+
+model User {
+  id               String   @id @default(uuid())
+  email            String   @unique
+  password         String
+  name             String
+  businessName     String?
+  businessPhone    String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  subscription     Subscription?
+  calls            Call[]
+  messages         Message[]
+  bookings         Booking[]
+  settings         BusinessSettings?
+  stripeCustomerId String?
+}
+
+model Subscription {
+  id             String           @id @default(uuid())
+  userId         String           @unique
+  user           User             @relation(fields: [userId], references: [id])
+  tier           SubscriptionTier @default(FREE)
+  stripeSubId    String?
+  currentPeriodStart DateTime?
+  currentPeriodEnd   DateTime?
+  status         String           @default("active")
+  minutesUsed    Int              @default(0)
+  minutesLimit   Int              @default(50)
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+}
+
+model Call {
+  id            String      @id @default(uuid())
+  userId        String
+  user          User        @relation(fields: [userId], references: [id])
+  callSid       String      @unique
+  caller        String
+  callee        String
+  duration      Int         @default(0)
+  status        CallStatus  @default(HANDLED)
+  transcript    String?
+  summary       String?
+  recordingUrl  String?
+  intent        String?
+  outcome       String?
+  voicemailUrl  String?
+  createdAt     DateTime    @default(now())
+}
+
+model Message {
+  id            String         @id @default(uuid())
+  userId        String
+  user          User           @relation(fields: [userId], references: [id])
+  channel       MessageChannel @default(SMS)
+  fromNumber    String
+  toNumber      String
+  content       String
+  direction     String         @default("inbound")
+  aiGenerated   Boolean        @default(false)
+  status        String         @default("sent")
+  conversationId String?
+  createdAt     DateTime       @default(now())
+}
+
+model Booking {
+  id          String         @id @default(uuid())
+  userId      String
+  user        User           @relation(fields: [userId], references: [id])
+  customerName String
+  customerPhone String?
+  customerEmail String?
+  title       String
+  description String?
+  date        DateTime
+  duration    Int            @default(30)
+  status      BookingStatus  @default(PENDING)
+  source      String?
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+}
+
+model BusinessSettings {
+  id            String   @id @default(uuid())
+  userId        String   @unique
+  user          User     @relation(fields: [userId], references: [id])
+  businessName  String?
+  businessHours String?
+  aiTone        String   @default("friendly")
+  aiVoice       String   @default("Polly.Joanna")
+  greetingMessage String @default("Hello, thank you for calling. How can I assist you today?")
+  emergencyRule  String?
+  emergencyNumber String?
+  autoReply     String?
+  timezone      String   @default("UTC")
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}

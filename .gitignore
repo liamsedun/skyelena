@@ -1,0 +1,15 @@
+node_modules/
+dist/
+.env
+*.db
+*.db-journal
+.DS_Store
+build/
+.idea/
+.vscode/
+*.log
+flutter/
+android/
+ios/
+.metadata
+skybooks-*
