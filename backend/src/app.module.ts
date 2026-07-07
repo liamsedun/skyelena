@@ -13,6 +13,7 @@ import { BillingModule } from './billing/billing.module';
 import { WebsocketModule } from './websocket/websocket.module';
 import { DashboardModule } from './dashboard/dashboard.module';
 import { AnalyticsModule } from './analytics/analytics.module';
+import { HealthController } from './health.controller';
 
 @Module({
   imports: [
@@ -31,5 +32,6 @@ import { AnalyticsModule } from './analytics/analytics.module';
     DashboardModule,
     AnalyticsModule,
   ],
+  controllers: [HealthController],
 })
 export class AppModule {}
